@@ -1,4 +1,6 @@
 import { put, list, del } from '@vercel/blob';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 // Blob paths for different data types
 const BLOB_PATHS = {
@@ -9,11 +11,36 @@ const BLOB_PATHS = {
 
 type BlobDataType = keyof typeof BLOB_PATHS;
 
+// Check if we're in local dev without blob token
+const isLocalDev = !process.env.BLOB_READ_WRITE_TOKEN;
+
+// Local file paths for development fallback
+const LOCAL_DATA_DIR = path.join(process.cwd(), 'src', 'data');
+const LOCAL_PATHS: Record<BlobDataType, string> = {
+  menu: path.join(LOCAL_DATA_DIR, 'menu.json'),
+  gallery: path.join(LOCAL_DATA_DIR, 'gallery.json'),
+  feedback: path.join(LOCAL_DATA_DIR, 'feedback.json'),
+};
+
 /**
- * Fetch JSON data from Vercel Blob
+ * Fetch JSON data from Vercel Blob (or local file in dev)
  * Returns null if the blob doesn't exist
  */
 export async function getBlobData<T>(type: BlobDataType): Promise<T | null> {
+  // Local dev fallback - read from local JSON files
+  if (isLocalDev) {
+    try {
+      const filePath = LOCAL_PATHS[type];
+      const data = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(data) as T;
+    } catch (error) {
+      // File doesn't exist, return null
+      console.log(`[Local Dev] No local ${type} data found`);
+      return null;
+    }
+  }
+
+  // Production: use Vercel Blob
   try {
     const { blobs } = await list({ prefix: BLOB_PATHS[type] });
     
@@ -34,10 +61,25 @@ export async function getBlobData<T>(type: BlobDataType): Promise<T | null> {
 }
 
 /**
- * Save JSON data to Vercel Blob
+ * Save JSON data to Vercel Blob (or local file in dev)
  * Overwrites existing data
  */
 export async function setBlobData<T>(type: BlobDataType, data: T): Promise<boolean> {
+  // Local dev fallback - write to local JSON files
+  if (isLocalDev) {
+    try {
+      const filePath = LOCAL_PATHS[type];
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+      console.log(`[Local Dev] Saved ${type} data to ${filePath}`);
+      return true;
+    } catch (error) {
+      console.error(`[Local Dev] Error saving ${type}:`, error);
+      return false;
+    }
+  }
+
+  // Production: use Vercel Blob
   try {
     // Delete existing blob first (Vercel Blob doesn't overwrite by path alone)
     await deleteBlobData(type);
@@ -60,6 +102,12 @@ export async function setBlobData<T>(type: BlobDataType, data: T): Promise<boole
  * Delete blob data
  */
 export async function deleteBlobData(type: BlobDataType): Promise<boolean> {
+  // Local dev fallback - can't really "delete" but we can return empty
+  if (isLocalDev) {
+    console.log(`[Local Dev] Delete operation for ${type} (no-op in local dev)`);
+    return true;
+  }
+
   try {
     const { blobs } = await list({ prefix: BLOB_PATHS[type] });
     
@@ -78,6 +126,15 @@ export async function deleteBlobData(type: BlobDataType): Promise<boolean> {
  * Check if blob data exists
  */
 export async function blobDataExists(type: BlobDataType): Promise<boolean> {
+  if (isLocalDev) {
+    try {
+      await fs.access(LOCAL_PATHS[type]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   try {
     const { blobs } = await list({ prefix: BLOB_PATHS[type] });
     return blobs.length > 0;
@@ -90,6 +147,11 @@ export async function blobDataExists(type: BlobDataType): Promise<boolean> {
  * Get the public URL for a blob type
  */
 export async function getBlobUrl(type: BlobDataType): Promise<string | null> {
+  if (isLocalDev) {
+    // Return a local URL for dev
+    return `/api/${type}`;
+  }
+
   try {
     const { blobs } = await list({ prefix: BLOB_PATHS[type] });
     return blobs.length > 0 ? blobs[0].url : null;
