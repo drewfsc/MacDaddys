@@ -53,9 +53,11 @@ export default function Gallery() {
 
   const categories = ['all', 'food', 'interior', 'team', 'exterior'];
 
+  // Filter out any images with invalid URLs to prevent broken images
+  const validImages = images.filter((img) => img.url && img.url.trim() !== '');
   const filteredImages = filter === 'all'
-    ? images
-    : images.filter((img) => img.category === filter);
+    ? validImages
+    : validImages.filter((img) => img.category === filter);
 
   return (
     <section id="gallery" className="py-16 md:py-24 bg-[#FFF8E7]">
