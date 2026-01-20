@@ -3,10 +3,10 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 // Blob paths for different data types
+// Note: Gallery metadata is now stored in MongoDB, not blob storage
 const BLOB_PATHS = {
   menu: 'data/menu.json',
   specials: 'data/specials.json',
-  gallery: 'data/gallery.json',
   feedback: 'data/feedback.json',
 } as const;
 
@@ -20,7 +20,6 @@ const LOCAL_DATA_DIR = path.join(process.cwd(), 'src', 'data');
 const LOCAL_PATHS: Record<BlobDataType, string> = {
   menu: path.join(LOCAL_DATA_DIR, 'menu.json'),
   specials: path.join(LOCAL_DATA_DIR, 'specials.json'),
-  gallery: path.join(LOCAL_DATA_DIR, 'gallery.json'),
   feedback: path.join(LOCAL_DATA_DIR, 'feedback.json'),
 };
 

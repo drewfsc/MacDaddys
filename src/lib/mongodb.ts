@@ -1,16 +1,14 @@
 /**
  * MongoDB connection utility
- * 
- * NOTE: This is now ONLY used for authentication (NextAuth adapter).
- * All content storage (menu, gallery, feedback) has been migrated to Vercel Blob.
- * 
- * The auth-related collections stored in MongoDB:
+ *
+ * Collections stored in MongoDB:
  * - users (NextAuth user accounts)
  * - accounts (OAuth accounts if any)
  * - sessions (if using database sessions)
  * - verification_tokens (magic link tokens)
  * - subscribers (mailing list)
  * - likes (user likes on menu items)
+ * - gallery (gallery image metadata - images stored in Vercel Blob)
  */
 
 import { MongoClient, Db } from 'mongodb';

@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBlobData, setBlobData } from '@/lib/blob-storage';
+import { connectToDatabase } from '@/lib/mongodb';
 import { put, del } from '@vercel/blob';
+import { ObjectId } from 'mongodb';
 
 interface GalleryImage {
-  id: string;
+  _id: ObjectId;
   url: string;
   alt: string;
   category: 'food' | 'interior' | 'team' | 'exterior';
   order: number;
-  createdAt: string;
-}
-
-interface GalleryData {
-  images: GalleryImage[];
-  lastUpdated: string;
+  createdAt: Date;
 }
 
 // POST - Replace image with rotated version
@@ -37,6 +33,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate ObjectId format
+    if (!ObjectId.isValid(imageId)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid image ID format' },
+        { status: 400 }
+      );
+    }
+
     // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
@@ -46,28 +50,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get existing gallery data
-    const gallery = await getBlobData<GalleryData>('gallery');
-
-    if (!gallery) {
-      return NextResponse.json(
-        { success: false, error: 'Gallery not found' },
-        { status: 404 }
-      );
-    }
+    const { db } = await connectToDatabase();
 
     // Find the image to update
-    const imageIndex = gallery.images.findIndex((img) => img.id === imageId);
+    const existingImage = await db.collection<GalleryImage>('gallery').findOne({
+      _id: new ObjectId(imageId)
+    });
 
-    if (imageIndex === -1) {
+    if (!existingImage) {
       return NextResponse.json(
         { success: false, error: 'Image not found' },
         { status: 404 }
       );
     }
 
-    const oldImage = gallery.images[imageIndex];
-    const oldUrl = oldImage.url;
+    const oldUrl = existingImage.url;
 
     // Generate new filename for rotated image
     const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
@@ -79,29 +76,27 @@ export async function POST(request: NextRequest) {
       addRandomSuffix: false,
     });
 
-    // Update gallery data with new URL
-    gallery.images[imageIndex] = {
-      ...oldImage,
-      url: blob.url,
-    };
-    gallery.lastUpdated = new Date().toISOString();
+    // Update MongoDB with new URL
+    const result = await db.collection<GalleryImage>('gallery').findOneAndUpdate(
+      { _id: new ObjectId(imageId) },
+      { $set: { url: blob.url } },
+      { returnDocument: 'after' }
+    );
 
-    const saved = await setBlobData('gallery', gallery);
-
-    if (!saved) {
+    if (!result) {
       // Clean up the newly uploaded blob
       try {
         await del(blob.url);
       } catch (e) {
-        console.error('Failed to clean up new blob after save failure:', e);
+        console.error('Failed to clean up new blob after update failure:', e);
       }
       return NextResponse.json(
-        { success: false, error: 'Failed to save gallery data' },
+        { success: false, error: 'Failed to update image' },
         { status: 500 }
       );
     }
 
-    // Delete old image blob after successful save
+    // Delete old image blob after successful update
     try {
       await del(oldUrl);
     } catch (e) {
@@ -111,7 +106,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: gallery.images[imageIndex],
+      data: {
+        id: result._id.toString(),
+        url: result.url,
+        alt: result.alt,
+        category: result.category,
+        order: result.order,
+        createdAt: result.createdAt.toISOString(),
+      },
     });
   } catch (error) {
     console.error('Rotate error:', error);

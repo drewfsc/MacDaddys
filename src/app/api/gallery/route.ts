@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBlobData, setBlobData } from '@/lib/blob-storage';
+import { connectToDatabase } from '@/lib/mongodb';
 import { put, del } from '@vercel/blob';
+import { ObjectId } from 'mongodb';
 
 export interface GalleryImage {
+  _id: ObjectId;
+  url: string;
+  alt: string;
+  category: 'food' | 'interior' | 'team' | 'exterior';
+  order: number;
+  createdAt: Date;
+}
+
+// Response format for frontend (with string id)
+interface GalleryImageResponse {
   id: string;
   url: string;
   alt: string;
@@ -11,32 +22,29 @@ export interface GalleryImage {
   createdAt: string;
 }
 
-interface GalleryData {
-  images: GalleryImage[];
-  lastUpdated: string;
+function formatImageResponse(img: GalleryImage): GalleryImageResponse {
+  return {
+    id: img._id.toString(),
+    url: img.url,
+    alt: img.alt,
+    category: img.category,
+    order: img.order,
+    createdAt: img.createdAt.toISOString(),
+  };
 }
 
 // GET - Fetch all gallery images
 export async function GET() {
   try {
-    const gallery = await getBlobData<GalleryData>('gallery');
-
-    if (!gallery) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-      });
-    }
-
-    // Sort by order, then by createdAt descending
-    const sortedImages = [...(gallery.images || [])].sort((a, b) => {
-      if (a.order !== b.order) return a.order - b.order;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    const { db } = await connectToDatabase();
+    const images = await db.collection<GalleryImage>('gallery')
+      .find({})
+      .sort({ order: 1, createdAt: -1 })
+      .toArray();
 
     return NextResponse.json({
       success: true,
-      data: sortedImages,
+      data: images.map(formatImageResponse),
     });
   } catch (error) {
     console.error('Error fetching gallery:', error);
@@ -67,7 +75,6 @@ export async function POST(request: NextRequest) {
     formData.getAll('files').forEach((f, index) => {
       if (f instanceof File) {
         files.push(f);
-        // Get corresponding alt text
         const altTexts = formData.getAll('alts');
         alts.push((altTexts[index] as string) || '');
       }
@@ -101,12 +108,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get existing gallery data ONCE before uploading
-    const gallery = await getBlobData<GalleryData>('gallery') || { images: [], lastUpdated: '' };
-    let maxOrder = gallery.images.reduce((max, img) => Math.max(max, img.order || 0), -1);
+    const { db } = await connectToDatabase();
+
+    // Get max order for new images
+    const lastImage = await db.collection<GalleryImage>('gallery')
+      .findOne({}, { sort: { order: -1 } });
+    let maxOrder = lastImage?.order ?? -1;
 
     // Upload all files and collect results
-    const uploadedImages: GalleryImage[] = [];
+    const uploadedImages: GalleryImageResponse[] = [];
     const uploadedBlobs: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -114,7 +124,7 @@ export async function POST(request: NextRequest) {
       const alt = alts[i];
 
       try {
-        // Generate unique filename with index to ensure uniqueness in batch
+        // Generate unique filename
         const extension = file.name.split('.').pop() || 'jpg';
         const filename = `gallery/${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${extension}`;
 
@@ -126,48 +136,34 @@ export async function POST(request: NextRequest) {
 
         uploadedBlobs.push(blob.url);
 
-        // Create new image document
+        // Insert metadata to MongoDB
         maxOrder++;
-        const imageDoc: GalleryImage = {
-          id: `gallery-${Date.now()}-${i}`,
+        const imageDoc = {
           url: blob.url,
           alt: alt || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'Gallery image',
           category: category as GalleryImage['category'],
           order: maxOrder,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date(),
         };
 
-        uploadedImages.push(imageDoc);
+        const result = await db.collection('gallery').insertOne(imageDoc);
+
+        uploadedImages.push({
+          id: result.insertedId.toString(),
+          url: imageDoc.url,
+          alt: imageDoc.alt,
+          category: imageDoc.category,
+          order: imageDoc.order,
+          createdAt: imageDoc.createdAt.toISOString(),
+        });
       } catch (uploadError) {
         console.error(`Failed to upload ${file.name}:`, uploadError);
-        // Continue with other files
       }
     }
 
     if (uploadedImages.length === 0) {
       return NextResponse.json(
         { success: false, error: 'All uploads failed' },
-        { status: 500 }
-      );
-    }
-
-    // Add all uploaded images to gallery and save ONCE
-    gallery.images.push(...uploadedImages);
-    gallery.lastUpdated = new Date().toISOString();
-
-    const saved = await setBlobData('gallery', gallery);
-
-    if (!saved) {
-      // Try to clean up uploaded blobs
-      for (const blobUrl of uploadedBlobs) {
-        try {
-          await del(blobUrl);
-        } catch (e) {
-          console.error('Failed to clean up blob after save failure:', e);
-        }
-      }
-      return NextResponse.json(
-        { success: false, error: 'Failed to save gallery data' },
         { status: 500 }
       );
     }
@@ -199,33 +195,38 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const gallery = await getBlobData<GalleryData>('gallery');
-
-    if (!gallery) {
+    // Validate ObjectId format
+    if (!ObjectId.isValid(id)) {
       return NextResponse.json(
-        { success: false, error: 'Gallery not found' },
-        { status: 404 }
+        { success: false, error: 'Invalid image ID format' },
+        { status: 400 }
       );
     }
 
-    const imageIndex = gallery.images.findIndex((img) => img.id === id);
+    const { db } = await connectToDatabase();
 
-    if (imageIndex === -1) {
+    const updateFields: Record<string, unknown> = {};
+    if (alt !== undefined) updateFields.alt = alt;
+    if (category !== undefined) updateFields.category = category;
+    if (order !== undefined) updateFields.order = order;
+
+    const result = await db.collection<GalleryImage>('gallery').findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updateFields },
+      { returnDocument: 'after' }
+    );
+
+    if (!result) {
       return NextResponse.json(
         { success: false, error: 'Image not found' },
         { status: 404 }
       );
     }
 
-    if (alt !== undefined) gallery.images[imageIndex].alt = alt;
-    if (category !== undefined) gallery.images[imageIndex].category = category;
-    if (order !== undefined) gallery.images[imageIndex].order = order;
-
-    gallery.lastUpdated = new Date().toISOString();
-
-    await setBlobData('gallery', gallery);
-
-    return NextResponse.json({ success: true, data: gallery.images[imageIndex] });
+    return NextResponse.json({
+      success: true,
+      data: formatImageResponse(result),
+    });
   } catch (error) {
     console.error('Update error:', error);
     return NextResponse.json(
@@ -266,21 +267,29 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const gallery = await getBlobData<GalleryData>('gallery');
-
-    if (!gallery) {
+    // Validate all ObjectIds
+    const validIds = idsToDelete.filter(id => ObjectId.isValid(id));
+    if (validIds.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Gallery not found' },
-        { status: 404 }
+        { success: false, error: 'No valid image IDs provided' },
+        { status: 400 }
       );
     }
 
-    const idsSet = new Set(idsToDelete);
+    const { db } = await connectToDatabase();
+    const objectIds = validIds.map(id => new ObjectId(id));
 
-    // Find all images to delete from blob storage
-    const imagesToDelete = gallery.images.filter((img) => idsSet.has(img.id));
+    // Find all images to delete (to get blob URLs)
+    const imagesToDelete = await db.collection<GalleryImage>('gallery')
+      .find({ _id: { $in: objectIds } })
+      .toArray();
 
-    // Delete all image blobs
+    // Delete from MongoDB
+    const deleteResult = await db.collection('gallery').deleteMany({
+      _id: { $in: objectIds }
+    });
+
+    // Delete blob files
     for (const image of imagesToDelete) {
       if (image?.url) {
         try {
@@ -291,15 +300,9 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    // Remove all deleted images from gallery data in one operation
-    gallery.images = gallery.images.filter((img) => !idsSet.has(img.id));
-    gallery.lastUpdated = new Date().toISOString();
-
-    await setBlobData('gallery', gallery);
-
     return NextResponse.json({
       success: true,
-      deletedCount: imagesToDelete.length
+      deletedCount: deleteResult.deletedCount,
     });
   } catch (error) {
     console.error('Delete error:', error);
