@@ -32,6 +32,11 @@ export interface DailySpecial {
   active?: boolean;
 }
 
+export interface SpecialsData {
+  lastUpdated: string;
+  daily: DailySpecial[];
+}
+
 export interface MenuData {
   _id?: ObjectId;
   lastUpdated: string;

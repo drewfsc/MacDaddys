@@ -1,19 +1,43 @@
 import { NextResponse } from 'next/server';
 import { getBlobData, setBlobData } from '@/lib/blob-storage';
-import { DailySpecial, MenuData } from '@/lib/types';
+import { DailySpecial, SpecialsData, MenuData } from '@/lib/types';
+
+// Helper to get specials data with migration from menu blob
+async function getSpecialsData(): Promise<SpecialsData | null> {
+  // First try the dedicated specials blob
+  let specials = await getBlobData<SpecialsData>('specials');
+
+  if (specials) {
+    return specials;
+  }
+
+  // Fall back to menu.specials for backwards compatibility
+  const menu = await getBlobData<MenuData>('menu');
+  if (menu?.specials?.daily) {
+    // Migrate data to dedicated specials blob
+    const migratedData: SpecialsData = {
+      lastUpdated: new Date().toISOString(),
+      daily: menu.specials.daily,
+    };
+    await setBlobData('specials', migratedData);
+    return migratedData;
+  }
+
+  // No specials data found, return empty structure
+  return {
+    lastUpdated: new Date().toISOString(),
+    daily: [],
+  };
+}
 
 // GET - Fetch all daily specials
 export async function GET() {
   try {
-    const menu = await getBlobData<MenuData>('menu');
+    const specials = await getSpecialsData();
 
-    if (!menu) {
-      return NextResponse.json({ success: true, data: [] });
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      data: menu.specials?.daily || [] 
+    return NextResponse.json({
+      success: true,
+      data: specials?.daily || []
     });
   } catch (error) {
     console.error('Error fetching specials:', error);
@@ -37,18 +61,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const menu = await getBlobData<MenuData>('menu');
+    const specials = await getSpecialsData();
 
-    if (!menu) {
+    if (!specials) {
       return NextResponse.json(
-        { success: false, error: 'Menu not found' },
-        { status: 404 }
+        { success: false, error: 'Failed to load specials data' },
+        { status: 500 }
       );
     }
 
     // Check if special for this day already exists
-    const existingSpecials = menu.specials?.daily || [];
-    const existingIndex = existingSpecials.findIndex(
+    const existingIndex = specials.daily.findIndex(
       (s) => s.day.toLowerCase() === special.day.toLowerCase()
     );
 
@@ -67,18 +90,17 @@ export async function POST(request: Request) {
       active: special.active !== false,
     };
 
-    // Ensure specials structure exists
-    if (!menu.specials) {
-      menu.specials = { daily: [] };
-    }
-    if (!menu.specials.daily) {
-      menu.specials.daily = [];
-    }
+    specials.daily.push(newSpecial);
+    specials.lastUpdated = new Date().toISOString();
 
-    menu.specials.daily.push(newSpecial);
-    menu.lastUpdated = new Date().toISOString();
+    const saved = await setBlobData('specials', specials);
 
-    await setBlobData('menu', menu);
+    if (!saved) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to save special' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true, data: newSpecial });
   } catch (error) {
@@ -102,17 +124,16 @@ export async function PUT(request: Request) {
       );
     }
 
-    const menu = await getBlobData<MenuData>('menu');
+    const specials = await getSpecialsData();
 
-    if (!menu) {
+    if (!specials) {
       return NextResponse.json(
-        { success: false, error: 'Menu not found' },
-        { status: 404 }
+        { success: false, error: 'Failed to load specials data' },
+        { status: 500 }
       );
     }
 
-    const specials = menu.specials?.daily || [];
-    const specialIndex = specials.findIndex(
+    const specialIndex = specials.daily.findIndex(
       (s) => s.day.toLowerCase() === day.toLowerCase()
     );
 
@@ -125,23 +146,30 @@ export async function PUT(request: Request) {
 
     // Update the special
     if (updates.name !== undefined) {
-      menu.specials!.daily[specialIndex].name = updates.name;
+      specials.daily[specialIndex].name = updates.name;
     }
     if (updates.description !== undefined) {
-      menu.specials!.daily[specialIndex].description = updates.description;
+      specials.daily[specialIndex].description = updates.description;
     }
     if (updates.price !== undefined) {
-      menu.specials!.daily[specialIndex].price = Number(updates.price);
+      specials.daily[specialIndex].price = Number(updates.price);
     }
     if (updates.active !== undefined) {
-      menu.specials!.daily[specialIndex].active = updates.active;
+      specials.daily[specialIndex].active = updates.active;
     }
 
-    menu.lastUpdated = new Date().toISOString();
+    specials.lastUpdated = new Date().toISOString();
 
-    await setBlobData('menu', menu);
+    const saved = await setBlobData('specials', specials);
 
-    return NextResponse.json({ success: true, data: menu.specials!.daily[specialIndex] });
+    if (!saved) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to save changes' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data: specials.daily[specialIndex] });
   } catch (error) {
     console.error('Error updating special:', error);
     return NextResponse.json(
@@ -164,24 +192,29 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const menu = await getBlobData<MenuData>('menu');
+    const specials = await getSpecialsData();
 
-    if (!menu) {
+    if (!specials) {
       return NextResponse.json(
-        { success: false, error: 'Menu not found' },
-        { status: 404 }
+        { success: false, error: 'Failed to load specials data' },
+        { status: 500 }
       );
     }
 
-    if (menu.specials?.daily) {
-      menu.specials.daily = menu.specials.daily.filter(
-        (s) => s.day.toLowerCase() !== day.toLowerCase()
+    specials.daily = specials.daily.filter(
+      (s) => s.day.toLowerCase() !== day.toLowerCase()
+    );
+
+    specials.lastUpdated = new Date().toISOString();
+
+    const saved = await setBlobData('specials', specials);
+
+    if (!saved) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to save changes' },
+        { status: 500 }
       );
     }
-
-    menu.lastUpdated = new Date().toISOString();
-
-    await setBlobData('menu', menu);
 
     return NextResponse.json({ success: true });
   } catch (error) {

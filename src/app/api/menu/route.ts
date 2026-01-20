@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getBlobData, setBlobData } from '@/lib/blob-storage';
 import menuDataJson from '@/data/menu.json';
-import { MenuData } from '@/lib/types';
+import { MenuData, SpecialsData } from '@/lib/types';
 
 // GET - Fetch entire menu
 export async function GET() {
@@ -32,6 +32,17 @@ export async function GET() {
 
       await setBlobData('menu', seedData);
       menu = seedData;
+    }
+
+    // Get specials from dedicated specials blob (takes precedence over menu.specials)
+    const specialsData = await getBlobData<SpecialsData>('specials');
+    if (specialsData?.daily) {
+      menu = {
+        ...menu,
+        specials: {
+          daily: specialsData.daily,
+        },
+      };
     }
 
     return NextResponse.json({ success: true, data: menu });
