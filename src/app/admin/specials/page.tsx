@@ -114,7 +114,7 @@ export default function SpecialsManagement() {
       message: `Are you sure you want to delete the ${day} special?`,
       confirmText: 'Delete',
       cancelText: 'Cancel',
-      variant: 'danger',
+      confirmStyle: 'danger',
     });
 
     if (!confirmed) return;
