@@ -37,7 +37,10 @@ export default function SpecialsManagement() {
 
   const fetchSpecials = async () => {
     try {
-      const res = await fetch('/api/menu/specials');
+      // Cache-bust to ensure fresh data
+      const res = await fetch(`/api/menu/specials?t=${Date.now()}`, {
+        cache: 'no-store',
+      });
       const data = await res.json();
       if (data.success) {
         setSpecials(data.data || []);
@@ -52,6 +55,18 @@ export default function SpecialsManagement() {
 
   const handleAddSpecial = async (special: Partial<DailySpecial>) => {
     setSaving(true);
+    
+    // Optimistic update
+    const newSpecial: DailySpecial = {
+      day: special.day || '',
+      name: special.name || '',
+      description: special.description || '',
+      price: Number(special.price) || 0,
+      active: special.active !== false,
+    };
+    setSpecials((prev) => [...prev, newSpecial]);
+    setShowAddModal(false);
+    
     try {
       const res = await fetch('/api/menu/specials', {
         method: 'POST',
@@ -61,14 +76,18 @@ export default function SpecialsManagement() {
       const data = await res.json();
 
       if (data.success) {
-        await fetchSpecials();
-        setShowAddModal(false);
         showToast('Special added successfully!', 'success');
       } else {
+        // Revert on failure
+        setSpecials((prev) => prev.filter((s) => s.day !== newSpecial.day));
+        setShowAddModal(true);
         showToast(data.error || 'Failed to add special', 'error');
       }
     } catch (error) {
       console.error('Error adding special:', error);
+      // Revert on failure
+      setSpecials((prev) => prev.filter((s) => s.day !== newSpecial.day));
+      setShowAddModal(true);
       showToast('Failed to add special', 'error');
     } finally {
       setSaving(false);
@@ -77,6 +96,16 @@ export default function SpecialsManagement() {
 
   const handleUpdateSpecial = async (special: DailySpecial) => {
     setSaving(true);
+    
+    // Store previous state for revert
+    const previousSpecials = [...specials];
+    
+    // Optimistic update
+    setSpecials((prev) =>
+      prev.map((s) => (s.day.toLowerCase() === special.day.toLowerCase() ? special : s))
+    );
+    setEditingSpecial(null);
+    
     try {
       const res = await fetch('/api/menu/specials', {
         method: 'PUT',
@@ -94,14 +123,18 @@ export default function SpecialsManagement() {
       const data = await res.json();
 
       if (data.success) {
-        await fetchSpecials();
-        setEditingSpecial(null);
         showToast('Special updated successfully!', 'success');
       } else {
+        // Revert on failure
+        setSpecials(previousSpecials);
+        setEditingSpecial(special);
         showToast(data.error || 'Failed to update special', 'error');
       }
     } catch (error) {
       console.error('Error updating special:', error);
+      // Revert on failure
+      setSpecials(previousSpecials);
+      setEditingSpecial(special);
       showToast('Failed to update special', 'error');
     } finally {
       setSaving(false);
@@ -119,6 +152,13 @@ export default function SpecialsManagement() {
 
     if (!confirmed) return;
 
+    // Store previous state for revert
+    const deletedSpecial = specials.find((s) => s.day.toLowerCase() === day.toLowerCase());
+    const previousSpecials = [...specials];
+    
+    // Optimistic update
+    setSpecials((prev) => prev.filter((s) => s.day.toLowerCase() !== day.toLowerCase()));
+
     try {
       const res = await fetch(`/api/menu/specials?day=${encodeURIComponent(day)}`, {
         method: 'DELETE',
@@ -126,38 +166,60 @@ export default function SpecialsManagement() {
       const data = await res.json();
 
       if (data.success) {
-        await fetchSpecials();
         showToast('Special deleted successfully!', 'success');
       } else {
+        // Revert on failure
+        setSpecials(previousSpecials);
         showToast(data.error || 'Failed to delete special', 'error');
       }
     } catch (error) {
       console.error('Error deleting special:', error);
+      // Revert on failure
+      setSpecials(previousSpecials);
       showToast('Failed to delete special', 'error');
     }
   };
 
   const handleToggleActive = async (special: DailySpecial) => {
+    const newActiveState = special.active === false ? true : false;
+    
+    // Store previous state for revert
+    const previousSpecials = [...specials];
+    
+    // Optimistic update
+    setSpecials((prev) =>
+      prev.map((s) =>
+        s.day.toLowerCase() === special.day.toLowerCase()
+          ? { ...s, active: newActiveState }
+          : s
+      )
+    );
+    
     try {
       const res = await fetch('/api/menu/specials', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           day: special.day,
-          updates: { active: !special.active },
+          updates: { active: newActiveState },
         }),
       });
       const data = await res.json();
 
       if (data.success) {
-        await fetchSpecials();
         showToast(
-          `${special.day} special ${special.active ? 'hidden' : 'visible'} on menu`,
+          `${special.day} special ${newActiveState ? 'visible' : 'hidden'} on menu`,
           'success'
         );
+      } else {
+        // Revert on failure
+        setSpecials(previousSpecials);
+        showToast('Failed to update special', 'error');
       }
     } catch (error) {
       console.error('Error toggling special:', error);
+      // Revert on failure
+      setSpecials(previousSpecials);
       showToast('Failed to update special', 'error');
     }
   };
