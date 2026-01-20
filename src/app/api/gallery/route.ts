@@ -47,73 +47,135 @@ export async function GET() {
   }
 }
 
-// POST - Upload new gallery image
+// POST - Upload new gallery image(s) - supports batch upload
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get('file') as File | null;
-    const alt = formData.get('alt') as string || '';
-    const category = formData.get('category') as string || 'interior';
 
-    if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'No file provided' },
-        { status: 400 }
-      );
+    // Get all files from the form data
+    const files: File[] = [];
+    const alts: string[] = [];
+
+    // Support both single file ('file') and multiple files ('files')
+    const singleFile = formData.get('file') as File | null;
+    if (singleFile) {
+      files.push(singleFile);
+      alts.push(formData.get('alt') as string || '');
     }
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
-    if (!validTypes.includes(file.type)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid file type. Use JPEG, PNG, WebP, or AVIF.' },
-        { status: 400 }
-      );
-    }
-
-    // Validate file size (max 10MB for gallery)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { success: false, error: 'File too large. Maximum size is 10MB.' },
-        { status: 400 }
-      );
-    }
-
-    // Generate filename
-    const extension = file.name.split('.').pop() || 'jpg';
-    const filename = `gallery/${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
-
-    // Upload to Vercel Blob
-    const blob = await put(filename, file, {
-      access: 'public',
-      addRandomSuffix: false,
+    // Get all files with 'files' key (for batch upload)
+    formData.getAll('files').forEach((f, index) => {
+      if (f instanceof File) {
+        files.push(f);
+        // Get corresponding alt text
+        const altTexts = formData.getAll('alts');
+        alts.push((altTexts[index] as string) || '');
+      }
     });
 
-    // Get existing gallery data
+    const category = formData.get('category') as string || 'interior';
+
+    if (files.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No files provided' },
+        { status: 400 }
+      );
+    }
+
+    // Validate all files first
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+    const maxSize = 10 * 1024 * 1024;
+
+    for (const file of files) {
+      if (!validTypes.includes(file.type)) {
+        return NextResponse.json(
+          { success: false, error: `Invalid file type for ${file.name}. Use JPEG, PNG, WebP, or AVIF.` },
+          { status: 400 }
+        );
+      }
+      if (file.size > maxSize) {
+        return NextResponse.json(
+          { success: false, error: `File ${file.name} too large. Maximum size is 10MB.` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Get existing gallery data ONCE before uploading
     const gallery = await getBlobData<GalleryData>('gallery') || { images: [], lastUpdated: '' };
+    let maxOrder = gallery.images.reduce((max, img) => Math.max(max, img.order || 0), -1);
 
-    // Calculate next order
-    const maxOrder = gallery.images.reduce((max, img) => Math.max(max, img.order || 0), -1);
+    // Upload all files and collect results
+    const uploadedImages: GalleryImage[] = [];
+    const uploadedBlobs: string[] = [];
 
-    // Create new image document
-    const imageDoc: GalleryImage = {
-      id: `gallery-${Date.now()}`,
-      url: blob.url,
-      alt: alt || 'Gallery image',
-      category: category as GalleryImage['category'],
-      order: maxOrder + 1,
-      createdAt: new Date().toISOString(),
-    };
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const alt = alts[i];
 
-    gallery.images.push(imageDoc);
+      try {
+        // Generate unique filename with index to ensure uniqueness in batch
+        const extension = file.name.split('.').pop() || 'jpg';
+        const filename = `gallery/${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${extension}`;
+
+        // Upload to Vercel Blob
+        const blob = await put(filename, file, {
+          access: 'public',
+          addRandomSuffix: false,
+        });
+
+        uploadedBlobs.push(blob.url);
+
+        // Create new image document
+        maxOrder++;
+        const imageDoc: GalleryImage = {
+          id: `gallery-${Date.now()}-${i}`,
+          url: blob.url,
+          alt: alt || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'Gallery image',
+          category: category as GalleryImage['category'],
+          order: maxOrder,
+          createdAt: new Date().toISOString(),
+        };
+
+        uploadedImages.push(imageDoc);
+      } catch (uploadError) {
+        console.error(`Failed to upload ${file.name}:`, uploadError);
+        // Continue with other files
+      }
+    }
+
+    if (uploadedImages.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'All uploads failed' },
+        { status: 500 }
+      );
+    }
+
+    // Add all uploaded images to gallery and save ONCE
+    gallery.images.push(...uploadedImages);
     gallery.lastUpdated = new Date().toISOString();
 
-    await setBlobData('gallery', gallery);
+    const saved = await setBlobData('gallery', gallery);
+
+    if (!saved) {
+      // Try to clean up uploaded blobs
+      for (const blobUrl of uploadedBlobs) {
+        try {
+          await del(blobUrl);
+        } catch (e) {
+          console.error('Failed to clean up blob after save failure:', e);
+        }
+      }
+      return NextResponse.json(
+        { success: false, error: 'Failed to save gallery data' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      data: imageDoc,
+      data: uploadedImages.length === 1 ? uploadedImages[0] : uploadedImages,
+      count: uploadedImages.length,
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -173,15 +235,33 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Remove gallery image
+// DELETE - Remove gallery image(s)
+// Supports single id via query param or multiple ids via JSON body
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const singleId = searchParams.get('id');
 
-    if (!id) {
+    let idsToDelete: string[] = [];
+
+    // Check for single ID in query params
+    if (singleId) {
+      idsToDelete = [singleId];
+    } else {
+      // Check for multiple IDs in request body
+      try {
+        const body = await request.json();
+        if (body.ids && Array.isArray(body.ids)) {
+          idsToDelete = body.ids;
+        }
+      } catch {
+        // No body or invalid JSON
+      }
+    }
+
+    if (idsToDelete.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Image ID required' },
+        { success: false, error: 'Image ID(s) required' },
         { status: 400 }
       );
     }
@@ -195,22 +275,32 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Find image to delete from blob
-    const image = gallery.images.find((img) => img.id === id);
-    if (image?.url) {
-      try {
-        await del(image.url);
-      } catch (e) {
-        console.error('Error deleting from blob:', e);
+    const idsSet = new Set(idsToDelete);
+
+    // Find all images to delete from blob storage
+    const imagesToDelete = gallery.images.filter((img) => idsSet.has(img.id));
+
+    // Delete all image blobs
+    for (const image of imagesToDelete) {
+      if (image?.url) {
+        try {
+          await del(image.url);
+        } catch (e) {
+          console.error('Error deleting from blob:', e);
+        }
       }
     }
 
-    gallery.images = gallery.images.filter((img) => img.id !== id);
+    // Remove all deleted images from gallery data in one operation
+    gallery.images = gallery.images.filter((img) => !idsSet.has(img.id));
     gallery.lastUpdated = new Date().toISOString();
 
     await setBlobData('gallery', gallery);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      deletedCount: imagesToDelete.length
+    });
   } catch (error) {
     console.error('Delete error:', error);
     return NextResponse.json(

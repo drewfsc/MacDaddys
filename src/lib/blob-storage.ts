@@ -50,7 +50,11 @@ export async function getBlobData<T>(type: BlobDataType): Promise<T | null> {
       return null;
     }
 
-    const response = await fetch(blobs[0].url);
+    // Add cache-busting to prevent stale data
+    const urlWithCacheBust = `${blobs[0].url}?t=${Date.now()}`;
+    const response = await fetch(urlWithCacheBust, {
+      cache: 'no-store',
+    });
     if (!response.ok) {
       return null;
     }

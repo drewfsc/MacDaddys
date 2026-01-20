@@ -47,6 +47,10 @@ export default function GalleryManagement() {
   const [selectedMenuItem, setSelectedMenuItem] = useState<string>('');
   const [settingMenuPhoto, setSettingMenuPhoto] = useState(false);
 
+  // Image rotation state
+  const [pendingRotation, setPendingRotation] = useState<number>(0);
+  const [isRotating, setIsRotating] = useState(false);
+
   // Upload form state
   const [uploadAlt, setUploadAlt] = useState('');
   const [uploadCategory, setUploadCategory] = useState<typeof categories[number]>('interior');
@@ -58,7 +62,10 @@ export default function GalleryManagement() {
 
   const fetchGallery = async () => {
     try {
-      const res = await fetch('/api/gallery');
+      // Cache-bust to ensure fresh data after uploads
+      const res = await fetch(`/api/gallery?t=${Date.now()}`, {
+        cache: 'no-store',
+      });
       const data = await res.json();
       if (data.success) {
         setImages(data.data || []);
@@ -96,9 +103,11 @@ export default function GalleryManagement() {
   };
 
   // Filtered images (computed before functions that use it)
+  // Also filter out any images with invalid/missing URLs to prevent broken placeholders
+  const validImages = images.filter((img) => img.url && img.url.trim() !== '');
   const filteredImages = filter === 'all'
-    ? images
-    : images.filter((img) => img.category === filter);
+    ? validImages
+    : validImages.filter((img) => img.category === filter);
 
   // Toggle image selection
   const toggleImageSelection = (imageId: string) => {
@@ -127,8 +136,18 @@ export default function GalleryManagement() {
     if (selectedImages.size === 0) return;
 
     setBulkUpdating(true);
-    let successCount = 0;
+    const totalSelected = selectedImages.size;
 
+    // Optimistic UI: update local state immediately
+    setImages((prevImages) =>
+      prevImages.map((img) =>
+        selectedImages.has(img.id)
+          ? { ...img, category: bulkCategory }
+          : img
+      )
+    );
+
+    let successCount = 0;
     for (const imageId of selectedImages) {
       try {
         const res = await fetch('/api/gallery', {
@@ -142,8 +161,6 @@ export default function GalleryManagement() {
       }
     }
 
-    await fetchGallery();
-    const totalSelected = selectedImages.size;
     setSelectedImages(new Set());
     setSelectMode(false);
     setBulkUpdating(false);
@@ -153,6 +170,58 @@ export default function GalleryManagement() {
     } else {
       showToast(`Updated ${successCount} image${successCount > 1 ? 's' : ''} to "${bulkCategory}"`, 'success');
     }
+  };
+
+  // Bulk delete selected images
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const handleBulkDelete = async () => {
+    if (selectedImages.size === 0) return;
+
+    const confirmed = await confirm({
+      title: 'DELETE SELECTED IMAGES',
+      message: `Are you sure you want to delete ${selectedImages.size} image${selectedImages.size > 1 ? 's' : ''}? This action cannot be undone.`,
+      confirmText: 'DELETE ALL',
+      cancelText: 'CANCEL',
+      confirmStyle: 'danger',
+    });
+
+    if (!confirmed) return;
+
+    setBulkDeleting(true);
+    const totalSelected = selectedImages.size;
+
+    // Optimistic UI: remove from local state immediately
+    const previousImages = images;
+    setImages((prev) => prev.filter((img) => !selectedImages.has(img.id)));
+
+    try {
+      // Single API call to delete all selected images
+      const res = await fetch('/api/gallery', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedImages) }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast(`Successfully deleted ${data.deletedCount} image${data.deletedCount > 1 ? 's' : ''}`, 'success');
+      } else {
+        // Rollback on failure
+        setImages(previousImages);
+        showToast(`Failed to delete images: ${data.error || 'Unknown error'}`, 'error');
+      }
+    } catch (error) {
+      // Rollback on error
+      setImages(previousImages);
+      console.error('Bulk delete error:', error);
+      showToast('Failed to delete images', 'error');
+    }
+
+    setSelectedImages(new Set());
+    setSelectMode(false);
+    setBulkDeleting(false);
   };
 
   // Set image as menu item photo
@@ -229,48 +298,46 @@ export default function GalleryManagement() {
     setUploading(true);
     setUploadProgress({ current: 0, total: files.length });
 
-    const results: { success: number; failed: number } = { success: 0, failed: 0 };
+    try {
+      // Build a single FormData with all files for batch upload
+      const formData = new FormData();
+      formData.append('category', uploadCategory);
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      setUploadProgress({ current: i + 1, total: files.length });
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        formData.append('files', file);
         // Use custom alt if single file, otherwise use filename
-        formData.append('alt', files.length === 1 && uploadAlt ? uploadAlt : file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
-        formData.append('category', uploadCategory);
-
-        const res = await fetch('/api/gallery', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          results.success++;
-        } else {
-          results.failed++;
-          console.error(`Failed to upload ${file.name}:`, data.error);
-        }
-      } catch (error) {
-        results.failed++;
-        console.error(`Failed to upload ${file.name}:`, error);
+        const altText = files.length === 1 && uploadAlt
+          ? uploadAlt
+          : file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        formData.append('alts', altText);
       }
-    }
 
-    await fetchGallery();
-    setUploadAlt('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    setUploading(false);
-    setUploadProgress(null);
+      setUploadProgress({ current: files.length, total: files.length });
 
-    if (results.failed > 0) {
-      showToast(`Uploaded ${results.success} of ${files.length} images. ${results.failed} failed.`, 'error');
-    } else if (results.success > 0) {
-      showToast(`Successfully uploaded ${results.success} image${results.success > 1 ? 's' : ''}`, 'success');
+      const res = await fetch('/api/gallery', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      await fetchGallery();
+      setUploadAlt('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
+      if (data.success) {
+        const count = data.count || 1;
+        showToast(`Successfully uploaded ${count} image${count > 1 ? 's' : ''}`, 'success');
+      } else {
+        showToast(`Upload failed: ${data.error || 'Unknown error'}`, 'error');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      showToast('Failed to upload images', 'error');
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -285,15 +352,22 @@ export default function GalleryManagement() {
 
     if (!confirmed) return;
 
+    // Optimistic UI: remove from local state immediately
+    const previousImages = images;
+    setImages((prev) => prev.filter((img) => img.id !== id));
+
     try {
       const res = await fetch(`/api/gallery?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
-        await fetchGallery();
         showToast('Image deleted successfully', 'success');
       } else {
+        // Rollback on failure
+        setImages(previousImages);
         showToast('Failed to delete image', 'error');
       }
     } catch (error) {
+      // Rollback on error
+      setImages(previousImages);
       console.error('Delete error:', error);
       showToast('Failed to delete image', 'error');
     }
@@ -303,23 +377,163 @@ export default function GalleryManagement() {
     if (!editingImage) return;
 
     try {
+      // If there's a pending rotation, handle it first
+      if (pendingRotation !== 0) {
+        await handleRotateAndSave();
+        return;
+      }
+
+      // Optimistic UI: update local state immediately
+      // Explicitly preserve all fields, only update alt and category
+      setImages((prevImages) =>
+        prevImages.map((img) =>
+          img.id === editingImage.id
+            ? {
+                id: img.id,
+                url: img.url,
+                alt: editingImage.alt,
+                category: editingImage.category,
+                order: img.order,
+                createdAt: img.createdAt,
+              }
+            : img
+        )
+      );
+
+      const previousEditingImage = editingImage;
+      setEditingImage(null);
+      setPendingRotation(0);
+
       const res = await fetch('/api/gallery', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: editingImage.id,
-          alt: editingImage.alt,
-          category: editingImage.category,
+          id: previousEditingImage.id,
+          alt: previousEditingImage.alt,
+          category: previousEditingImage.category,
         }),
       });
 
       if (res.ok) {
-        await fetchGallery();
-        setEditingImage(null);
+        showToast('Image updated successfully', 'success');
+      } else {
+        showToast('Failed to update image', 'error');
       }
     } catch (error) {
       console.error('Update error:', error);
+      showToast('Failed to update image', 'error');
     }
+  };
+
+  // Rotate image using canvas and save
+  const handleRotateAndSave = async () => {
+    if (!editingImage || pendingRotation === 0) return;
+
+    setIsRotating(true);
+
+    try {
+      // Load the image
+      const img = document.createElement('img');
+      img.crossOrigin = 'anonymous';
+
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = editingImage.url;
+      });
+
+      // Create canvas with rotated dimensions
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // For 90/270 rotation, swap width and height
+      const isVerticalRotation = pendingRotation === 90 || pendingRotation === 270;
+      canvas.width = isVerticalRotation ? img.height : img.width;
+      canvas.height = isVerticalRotation ? img.width : img.height;
+
+      // Move to center, rotate, then draw image centered
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((pendingRotation * Math.PI) / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+      // Convert to blob
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => {
+            if (b) resolve(b);
+            else reject(new Error('Failed to create blob'));
+          },
+          'image/jpeg',
+          0.92
+        );
+      });
+
+      // Upload rotated image
+      const formData = new FormData();
+      formData.append('file', blob, 'rotated.jpg');
+      formData.append('imageId', editingImage.id);
+
+      const res = await fetch('/api/gallery/rotate', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        const newImageData = data.data;
+
+        // Also update alt/category if changed
+        if (editingImage.alt !== newImageData.alt || editingImage.category !== newImageData.category) {
+          await fetch('/api/gallery', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: editingImage.id,
+              alt: editingImage.alt,
+              category: editingImage.category,
+            }),
+          });
+          // Update local data with edited values
+          newImageData.alt = editingImage.alt;
+          newImageData.category = editingImage.category;
+        }
+
+        // Update local state directly with new URL to avoid caching issues
+        setImages((prevImages) =>
+          prevImages.map((img) =>
+            img.id === editingImage.id
+              ? { ...img, url: newImageData.url, alt: newImageData.alt, category: newImageData.category }
+              : img
+          )
+        );
+
+        setEditingImage(null);
+        setPendingRotation(0);
+        showToast('Image rotated successfully', 'success');
+      } else {
+        showToast(`Failed to rotate: ${data.error}`, 'error');
+      }
+    } catch (error) {
+      console.error('Rotation error:', error);
+      showToast('Failed to rotate image', 'error');
+    } finally {
+      setIsRotating(false);
+    }
+  };
+
+  // Rotate left (counter-clockwise)
+  const rotateLeft = () => {
+    setPendingRotation((prev) => (prev - 90 + 360) % 360);
+  };
+
+  // Rotate right (clockwise)
+  const rotateRight = () => {
+    setPendingRotation((prev) => (prev + 90) % 360);
   };
 
   if (loading) {
@@ -337,7 +551,7 @@ export default function GalleryManagement() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-display text-4xl text-[#1a1a1a]">Gallery Management</h1>
         <div className="flex items-center gap-4">
-          <span className="text-gray-500">{images.length} images</span>
+          <span className="text-gray-500">{validImages.length} images</span>
           <button
             onClick={() => {
               setSelectMode(!selectMode);
@@ -382,7 +596,7 @@ export default function GalleryManagement() {
             </select>
             <button
               onClick={handleBulkCategorize}
-              disabled={selectedImages.size === 0 || bulkUpdating}
+              disabled={selectedImages.size === 0 || bulkUpdating || bulkDeleting}
               className="font-headline text-sm tracking-wider px-4 py-2 bg-[#C41E3A] rounded hover:bg-[#a01830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {bulkUpdating ? (
@@ -395,6 +609,28 @@ export default function GalleryManagement() {
                 </>
               ) : (
                 'SET CATEGORY'
+              )}
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={selectedImages.size === 0 || bulkUpdating || bulkDeleting}
+              className="font-headline text-sm tracking-wider px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {bulkDeleting ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  DELETING...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  DELETE
+                </>
               )}
             </button>
           </div>
@@ -500,7 +736,7 @@ export default function GalleryManagement() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredImages.map((image) => (
             <div
-              key={image.id}
+              key={`${image.id}-${image.url}`}
               className={`bg-white rounded-lg shadow-sm overflow-hidden group relative ${
                 selectMode ? 'cursor-pointer' : ''
               } ${selectedImages.has(image.id) ? 'ring-2 ring-[#C41E3A]' : ''}`}
@@ -535,7 +771,10 @@ export default function GalleryManagement() {
                 {!selectMode && (
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <button
-                      onClick={() => setEditingImage(image)}
+                      onClick={() => {
+                        setEditingImage(image);
+                        setPendingRotation(0);
+                      }}
                       className="p-2 bg-white rounded-full mr-2 hover:bg-gray-100"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -576,9 +815,41 @@ export default function GalleryManagement() {
                 alt={editingImage.alt}
                 fill
                 sizes="400px"
-                className="object-contain"
+                className="object-contain transition-transform duration-300"
+                style={{ transform: `rotate(${pendingRotation}deg)` }}
               />
             </div>
+
+            {/* Rotation Controls */}
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <button
+                onClick={rotateLeft}
+                disabled={isRotating}
+                className="flex items-center gap-2 px-4 py-2 border rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                title="Rotate left (counter-clockwise)"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                </svg>
+                <span className="font-headline text-sm">ROTATE LEFT</span>
+              </button>
+              <button
+                onClick={rotateRight}
+                disabled={isRotating}
+                className="flex items-center gap-2 px-4 py-2 border rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+                title="Rotate right (clockwise)"
+              >
+                <span className="font-headline text-sm">ROTATE RIGHT</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+                </svg>
+              </button>
+            </div>
+            {pendingRotation !== 0 && (
+              <p className="text-center text-sm text-gray-500 mb-4">
+                Rotation: {pendingRotation}° (will be applied on save)
+              </p>
+            )}
 
             <div className="space-y-4">
               <div>
@@ -653,16 +924,29 @@ export default function GalleryManagement() {
                 onClick={() => {
                   setEditingImage(null);
                   setSelectedMenuItem('');
+                  setPendingRotation(0);
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                disabled={isRotating}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdate}
-                className="flex-1 px-4 py-2 bg-[#C41E3A] text-white rounded hover:bg-[#a01830] transition-colors"
+                disabled={isRotating}
+                className="flex-1 px-4 py-2 bg-[#C41E3A] text-white rounded hover:bg-[#a01830] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Save Changes
+                {isRotating ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Rotating...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
             </div>
           </div>
