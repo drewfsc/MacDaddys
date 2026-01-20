@@ -4,7 +4,8 @@
       "Bash(npm run build:*)",
       "Bash(git rm:*)",
       "Bash(ls:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:hf3gfvkaxfhqohvg.public.blob.vercel-storage.com)"
     ]
   }
 }
