@@ -1,0 +1,5 @@
+# Source images - not needed for deployment
+/images
+
+# Files folder - development files
+/files
