@@ -42,8 +42,8 @@ export default function About() {
           <SlideIn direction="left" className="relative">
             <div className="relative aspect-[4/3] rounded-lg overflow-hidden retro-border">
               <Image
-                src="/images/about-interior.png"
-                alt="Inside Mac Daddy's Diner"
+                src="/images/our-story.jpg"
+                alt="The Mac Daddy's Diner family"
                 fill
                 className="object-cover"
               />
@@ -93,7 +93,7 @@ export default function About() {
         </div>
 
         {/* Features */}
-        <Stagger className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+        <Stagger className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16 max-w-4xl mx-auto">
           {features.map((feature, index) => (
             <StaggerItem key={index}>
               <motion.div
@@ -111,11 +111,6 @@ export default function About() {
                     </svg>
                   )}
                   {index === 1 && (
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  )}
-                  {index === 2 && (
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>

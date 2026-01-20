@@ -3,24 +3,24 @@
     "name": "Mac Daddy's Diner",
     "tagline": "Where Route 28 Meets Good Eats",
     "description": "A classic American diner with a passion for great food, hot rods, and the spirit of the 1950s. Located on Cape Cod's iconic Route 28.",
-    "established": "2024",
+    "established": "2025",
     "address": {
       "street": "928 Massachusetts Route 28",
       "city": "South Yarmouth",
       "state": "MA",
       "zip": "02664"
     },
-    "phone": "(508) 555-DINE",
-    "email": "hello@macdaddysdiner.com"
+    "phone": "508-776-7549",
+    "email": "macdaddysdiner@gmail.com"
   },
   "hours": {
-    "monday": { "open": "7:00 AM", "close": "3:00 PM" },
-    "tuesday": { "open": "7:00 AM", "close": "3:00 PM" },
-    "wednesday": { "open": "7:00 AM", "close": "3:00 PM" },
-    "thursday": { "open": "7:00 AM", "close": "3:00 PM" },
-    "friday": { "open": "7:00 AM", "close": "3:00 PM" },
-    "saturday": { "open": "7:00 AM", "close": "3:00 PM" },
-    "sunday": { "open": "7:00 AM", "close": "3:00 PM" }
+    "monday": { "open": "7:00 AM", "close": "1:00 PM" },
+    "tuesday": { "open": "7:00 AM", "close": "1:00 PM" },
+    "wednesday": { "closed": true },
+    "thursday": { "open": "7:00 AM", "close": "1:00 PM" },
+    "friday": { "open": "7:00 AM", "close": "1:00 PM" },
+    "saturday": { "open": "7:00 AM", "close": "1:00 PM" },
+    "sunday": { "open": "7:00 AM", "close": "1:00 PM" }
   },
   "social": {
     "instagram": "https://www.instagram.com/macdaddysdiner",
@@ -48,10 +48,6 @@
     {
       "title": "Classic Diner Vibes",
       "description": "Vintage license plates, model cars, and a real jukebox"
-    },
-    {
-      "title": "Boar's Head Deli",
-      "description": "Premium quality meats and cheeses"
     },
     {
       "title": "Made Fresh Daily",

@@ -87,7 +87,6 @@ export async function POST(request: Request) {
       name: special.name,
       description: special.description || '',
       price: Number(special.price),
-      active: special.active !== false,
     };
 
     specials.daily.push(newSpecial);
@@ -153,9 +152,6 @@ export async function PUT(request: Request) {
     }
     if (updates.price !== undefined) {
       specials.daily[specialIndex].price = Number(updates.price);
-    }
-    if (updates.active !== undefined) {
-      specials.daily[specialIndex].active = updates.active;
     }
 
     specials.lastUpdated = new Date().toISOString();

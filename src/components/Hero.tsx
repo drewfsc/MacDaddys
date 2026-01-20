@@ -115,16 +115,6 @@ export default function Hero() {
           </motion.div>
         </motion.div>
 
-        {/* Hours Badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 1.1, type: 'spring', stiffness: 200 }}
-          className="mt-12 inline-block bg-black/60 backdrop-blur-sm rounded-lg px-6 py-4 border-2 border-[#C41E3A]"
-        >
-          <p className="font-headline text-[#C41E3A] text-lg tracking-wider mb-1">OPEN DAILY</p>
-          <p className="font-headline text-white text-2xl tracking-wider">7:00 AM - 3:00 PM</p>
-        </motion.div>
       </div>
 
       {/* Scroll Indicator */}

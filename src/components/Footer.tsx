@@ -46,7 +46,7 @@ export default function Footer() {
               </motion.div>
               <div>
                 <span className="font-headline text-2xl tracking-wider block">
-                  MAC DADDY&apos;S
+                  MAC DADDY&apos;S DINER
                 </span>
                 <span className="font-accent text-sm text-[#C41E3A] italic">
                   Where Route 28 Meets Good Eats

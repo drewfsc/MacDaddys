@@ -16,14 +16,14 @@ interface MagicLinkEmailProps {
 export function MagicLinkEmail({ url, host }: MagicLinkEmailProps) {
   return (
     <BaseLayout previewText="Sign in to Mac Daddy's Diner">
-      <Heading style={heading}>Sign In to Mac Daddy&apos;s</Heading>
+      <Heading style={heading}>Sign In to Mac Daddy&apos;s Diner</Heading>
 
       <Text style={paragraph}>
         Click the button below to sign in to your account at {host}. This magic link will expire in 15 minutes.
       </Text>
 
       <Button style={button} href={url}>
-        SIGN IN TO MAC DADDY&apos;S
+        SIGN IN TO MAC DADDY&apos;S DINER
       </Button>
 
       <Hr style={hr} />

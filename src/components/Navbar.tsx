@@ -60,7 +60,7 @@ export default function Navbar() {
               />
             </motion.div>
             <span className="font-headline text-xl md:text-2xl text-white tracking-wider hidden sm:block">
-              MAC DADDY&apos;S
+              MAC DADDY&apos;S DINER
             </span>
           </Link>
 

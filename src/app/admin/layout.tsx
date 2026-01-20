@@ -86,7 +86,7 @@ export default function AdminLayout({
             <div className="relative w-24 h-24 mx-auto mb-4">
               <Image
                 src="/images/logo.avif"
-                alt="Mac Daddy's"
+                alt="Mac Daddy's Diner"
                 fill
                 sizes="96px"
                 className="object-contain"
@@ -151,7 +151,7 @@ export default function AdminLayout({
                   <div className="relative w-10 h-10">
                     <Image
                       src="/images/logo.avif"
-                      alt="Mac Daddy's"
+                      alt="Mac Daddy's Diner"
                       fill
                       sizes="40px"
                       className="object-contain"

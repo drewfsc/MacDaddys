@@ -126,7 +126,7 @@ export default function Contact() {
                           )}
                         </span>
                         <span className="font-headline tracking-wider">
-                          {dayHours.open} - {dayHours.close}
+                          {'closed' in dayHours ? 'Closed' : `${dayHours.open} - ${dayHours.close}`}
                         </span>
                       </motion.div>
                     </StaggerItem>

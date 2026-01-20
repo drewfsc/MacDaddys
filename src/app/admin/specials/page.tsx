@@ -9,7 +9,6 @@ interface DailySpecial {
   name: string;
   description: string;
   price: number;
-  active?: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -55,18 +54,17 @@ export default function SpecialsManagement() {
 
   const handleAddSpecial = async (special: Partial<DailySpecial>) => {
     setSaving(true);
-    
+
     // Optimistic update
     const newSpecial: DailySpecial = {
       day: special.day || '',
       name: special.name || '',
       description: special.description || '',
       price: Number(special.price) || 0,
-      active: special.active !== false,
     };
     setSpecials((prev) => [...prev, newSpecial]);
     setShowAddModal(false);
-    
+
     try {
       const res = await fetch('/api/menu/specials', {
         method: 'POST',
@@ -96,16 +94,16 @@ export default function SpecialsManagement() {
 
   const handleUpdateSpecial = async (special: DailySpecial) => {
     setSaving(true);
-    
+
     // Store previous state for revert
     const previousSpecials = [...specials];
-    
+
     // Optimistic update
     setSpecials((prev) =>
       prev.map((s) => (s.day.toLowerCase() === special.day.toLowerCase() ? special : s))
     );
     setEditingSpecial(null);
-    
+
     try {
       const res = await fetch('/api/menu/specials', {
         method: 'PUT',
@@ -116,7 +114,6 @@ export default function SpecialsManagement() {
             name: special.name,
             description: special.description,
             price: special.price,
-            active: special.active,
           },
         }),
       });
@@ -153,9 +150,8 @@ export default function SpecialsManagement() {
     if (!confirmed) return;
 
     // Store previous state for revert
-    const deletedSpecial = specials.find((s) => s.day.toLowerCase() === day.toLowerCase());
     const previousSpecials = [...specials];
-    
+
     // Optimistic update
     setSpecials((prev) => prev.filter((s) => s.day.toLowerCase() !== day.toLowerCase()));
 
@@ -177,50 +173,6 @@ export default function SpecialsManagement() {
       // Revert on failure
       setSpecials(previousSpecials);
       showToast('Failed to delete special', 'error');
-    }
-  };
-
-  const handleToggleActive = async (special: DailySpecial) => {
-    const newActiveState = special.active === false ? true : false;
-    
-    // Store previous state for revert
-    const previousSpecials = [...specials];
-    
-    // Optimistic update
-    setSpecials((prev) =>
-      prev.map((s) =>
-        s.day.toLowerCase() === special.day.toLowerCase()
-          ? { ...s, active: newActiveState }
-          : s
-      )
-    );
-    
-    try {
-      const res = await fetch('/api/menu/specials', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          day: special.day,
-          updates: { active: newActiveState },
-        }),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        showToast(
-          `${special.day} special ${newActiveState ? 'visible' : 'hidden'} on menu`,
-          'success'
-        );
-      } else {
-        // Revert on failure
-        setSpecials(previousSpecials);
-        showToast('Failed to update special', 'error');
-      }
-    } catch (error) {
-      console.error('Error toggling special:', error);
-      // Revert on failure
-      setSpecials(previousSpecials);
-      showToast('Failed to update special', 'error');
     }
   };
 
@@ -294,31 +246,9 @@ export default function SpecialsManagement() {
               {/* Content */}
               {special ? (
                 <div className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="font-headline text-lg text-[#1a1a1a]">
-                      {special.name}
-                    </h4>
-                    <button
-                      onClick={() => handleToggleActive(special)}
-                      className={`flex-shrink-0 p-1 rounded transition-colors ${
-                        special.active !== false
-                          ? 'text-green-600 hover:bg-green-50'
-                          : 'text-gray-400 hover:bg-gray-100'
-                      }`}
-                      title={special.active !== false ? 'Click to hide from menu' : 'Click to show on menu'}
-                    >
-                      {special.active !== false ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
+                  <h4 className="font-headline text-lg text-[#1a1a1a] mb-2">
+                    {special.name}
+                  </h4>
                   <p className="text-gray-500 text-sm mb-3 line-clamp-2">
                     {special.description}
                   </p>
@@ -341,11 +271,6 @@ export default function SpecialsManagement() {
                       </button>
                     </div>
                   </div>
-                  {special.active === false && (
-                    <div className="mt-2 text-xs text-gray-400 italic">
-                      Hidden from menu
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="p-4 text-center">
@@ -375,7 +300,6 @@ export default function SpecialsManagement() {
             <p className="font-medium mb-1">How Daily Specials Work</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700">
               <li>Specials are displayed on the public menu, highlighted for today</li>
-              <li>Toggle the eye icon to temporarily hide a special without deleting it</li>
               <li>The current day&apos;s special is automatically highlighted for customers</li>
             </ul>
           </div>
@@ -425,7 +349,6 @@ function SpecialModal({
       name: '',
       description: '',
       price: 0,
-      active: true,
     }
   );
 
@@ -436,7 +359,6 @@ function SpecialModal({
       name: formData.name || '',
       description: formData.description || '',
       price: Number(formData.price) || 0,
-      active: formData.active !== false,
     });
   };
 
@@ -526,18 +448,6 @@ function SpecialModal({
                 required
               />
             </div>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.active !== false}
-                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                className="w-4 h-4 accent-[#C41E3A]"
-              />
-              <span className="text-sm">Show on menu</span>
-            </label>
           </div>
 
           <div className="flex gap-3 pt-4">

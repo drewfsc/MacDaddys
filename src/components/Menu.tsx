@@ -34,7 +34,6 @@ interface DailySpecial {
   name: string;
   description: string;
   price: number;
-  active?: boolean;
 }
 
 interface MenuData {
@@ -458,7 +457,7 @@ export default function Menu() {
   if (!menuData) return null;
 
   const categories = menuData.categories || [];
-  const specials = menuData.specials?.daily?.filter((s) => s.active !== false) || [];
+  const specials = menuData.specials?.daily || [];
   const notices = menuData.notices || [];
 
   return (

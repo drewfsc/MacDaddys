@@ -29,7 +29,6 @@ export interface DailySpecial {
   name: string;
   description: string;
   price: number;
-  active?: boolean;
 }
 
 export interface SpecialsData {
