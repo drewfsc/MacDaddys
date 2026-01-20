@@ -1,0 +1,61 @@
+{
+  "business": {
+    "name": "Mac Daddy's Diner",
+    "tagline": "Where Route 28 Meets Good Eats",
+    "description": "A classic American diner with a passion for great food, hot rods, and the spirit of the 1950s. Located on Cape Cod's iconic Route 28.",
+    "established": "2024",
+    "address": {
+      "street": "928 Massachusetts Route 28",
+      "city": "South Yarmouth",
+      "state": "MA",
+      "zip": "02664"
+    },
+    "phone": "(508) 555-DINE",
+    "email": "hello@macdaddysdiner.com"
+  },
+  "hours": {
+    "monday": { "open": "7:00 AM", "close": "3:00 PM" },
+    "tuesday": { "open": "7:00 AM", "close": "3:00 PM" },
+    "wednesday": { "open": "7:00 AM", "close": "3:00 PM" },
+    "thursday": { "open": "7:00 AM", "close": "3:00 PM" },
+    "friday": { "open": "7:00 AM", "close": "3:00 PM" },
+    "saturday": { "open": "7:00 AM", "close": "3:00 PM" },
+    "sunday": { "open": "7:00 AM", "close": "3:00 PM" }
+  },
+  "social": {
+    "instagram": "https://www.instagram.com/macdaddysdiner",
+    "facebook": "https://www.facebook.com/MacDaddysDiner"
+  },
+  "about": {
+    "headline": "Good Food. Good Vibes. Good Times.",
+    "story": "Mac Daddy's Diner isn't just a restaurant - it's a trip back in time. Step through our doors and you're transported to the golden age of American diners, where the jukebox plays, the coffee flows, and every meal is made with love. Our passion for vintage cars, rock 'n' roll, and honest home cooking comes through in everything we do. Whether you're a local looking for your new favorite breakfast spot or a traveler cruising Route 28, pull up a stool at the counter or slide into one of our classic red booths. You're family here.",
+    "values": [
+      "Fresh ingredients, never frozen",
+      "Made from scratch daily",
+      "Family recipes with a modern twist",
+      "Serving the Cape Cod community with pride"
+    ]
+  },
+  "team": [
+    {
+      "name": "The Mac Daddy",
+      "role": "Owner & Head Chef",
+      "bio": "Bringing decades of kitchen experience and a lifelong love of classic cars to every plate.",
+      "image": "/images/owner-chef.png"
+    }
+  ],
+  "features": [
+    {
+      "title": "Classic Diner Vibes",
+      "description": "Vintage license plates, model cars, and a real jukebox"
+    },
+    {
+      "title": "Boar's Head Deli",
+      "description": "Premium quality meats and cheeses"
+    },
+    {
+      "title": "Made Fresh Daily",
+      "description": "From our kitchen to your table"
+    }
+  ]
+}

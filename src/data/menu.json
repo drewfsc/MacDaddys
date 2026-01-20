@@ -1,0 +1,256 @@
+{
+  "lastUpdated": "2024-12-14",
+  "categories": [
+    {
+      "id": "breakfast",
+      "name": "Breakfast",
+      "description": "Served all day - just like the good ol' days",
+      "icon": "sunrise",
+      "items": [
+        {
+          "id": "classic-eggs",
+          "name": "Two Eggs Any Style",
+          "description": "Two farm-fresh eggs cooked your way, served with home fries and toast",
+          "price": 8.99,
+          "popular": true
+        },
+        {
+          "id": "mac-daddy-omelette",
+          "name": "Mac Daddy's Omelette",
+          "description": "Three-egg omelette stuffed with ham, cheese, peppers, onions & mushrooms. Served with home fries and toast",
+          "price": 12.99,
+          "popular": true
+        },
+        {
+          "id": "pancakes",
+          "name": "Buttermilk Pancakes",
+          "description": "Stack of three fluffy buttermilk pancakes with butter and maple syrup",
+          "price": 9.99
+        },
+        {
+          "id": "french-toast",
+          "name": "Classic French Toast",
+          "description": "Thick-cut brioche bread dipped in cinnamon batter, grilled golden",
+          "price": 10.99
+        },
+        {
+          "id": "breakfast-sandwich",
+          "name": "Breakfast Sandwich",
+          "description": "Egg, cheese & your choice of bacon, sausage, or ham on a toasted roll",
+          "price": 7.99
+        }
+      ]
+    },
+    {
+      "id": "burgers",
+      "name": "Burgers & Sandwiches",
+      "description": "Hand-pattied fresh daily, never frozen",
+      "icon": "burger",
+      "items": [
+        {
+          "id": "classic-burger",
+          "name": "Classic Cheeseburger",
+          "description": "1/2 lb beef patty with American cheese, lettuce, tomato, onion & pickles",
+          "price": 12.99,
+          "popular": true
+        },
+        {
+          "id": "mac-daddy-burger",
+          "name": "The Mac Daddy",
+          "description": "Double patty, bacon, cheddar, caramelized onions, special sauce. Our signature!",
+          "price": 16.99,
+          "popular": true,
+          "featured": true
+        },
+        {
+          "id": "mushroom-swiss",
+          "name": "Mushroom Swiss Burger",
+          "description": "Sautéed mushrooms and melted Swiss cheese on a juicy patty",
+          "price": 14.99
+        },
+        {
+          "id": "blt",
+          "name": "Classic BLT",
+          "description": "Crispy bacon, fresh lettuce, ripe tomatoes on toasted bread with mayo",
+          "price": 10.99
+        },
+        {
+          "id": "grilled-cheese",
+          "name": "Grilled Cheese",
+          "description": "Melted American cheese on buttery grilled bread. Add bacon or tomato +$2",
+          "price": 7.99
+        },
+        {
+          "id": "patty-melt",
+          "name": "Patty Melt",
+          "description": "Beef patty with Swiss cheese and caramelized onions on grilled rye",
+          "price": 13.99
+        }
+      ]
+    },
+    {
+      "id": "classics",
+      "name": "Diner Classics",
+      "description": "Timeless favorites from the golden age",
+      "icon": "utensils",
+      "items": [
+        {
+          "id": "meatloaf",
+          "name": "Homestyle Meatloaf",
+          "description": "Thick slice of house-made meatloaf with gravy, mashed potatoes & vegetable",
+          "price": 14.99
+        },
+        {
+          "id": "hot-turkey",
+          "name": "Hot Turkey Sandwich",
+          "description": "Sliced turkey breast on white bread smothered in gravy with mashed potatoes",
+          "price": 13.99
+        },
+        {
+          "id": "fish-chips",
+          "name": "Fish & Chips",
+          "description": "Beer-battered cod with crispy fries, coleslaw & tartar sauce",
+          "price": 15.99
+        },
+        {
+          "id": "chicken-tenders",
+          "name": "Chicken Tenders",
+          "description": "Hand-breaded chicken strips with fries and your choice of dipping sauce",
+          "price": 12.99
+        }
+      ]
+    },
+    {
+      "id": "sides",
+      "name": "Sides",
+      "description": "The perfect sidekick",
+      "icon": "fries",
+      "items": [
+        {
+          "id": "fries",
+          "name": "French Fries",
+          "price": 4.99
+        },
+        {
+          "id": "onion-rings",
+          "name": "Onion Rings",
+          "price": 5.99
+        },
+        {
+          "id": "home-fries",
+          "name": "Home Fries",
+          "price": 4.99
+        },
+        {
+          "id": "coleslaw",
+          "name": "Coleslaw",
+          "price": 3.99
+        },
+        {
+          "id": "side-salad",
+          "name": "Side Salad",
+          "price": 4.99
+        },
+        {
+          "id": "mashed",
+          "name": "Mashed Potatoes & Gravy",
+          "price": 4.99
+        }
+      ]
+    },
+    {
+      "id": "shakes",
+      "name": "Shakes & Malts",
+      "description": "Hand-spun the old fashioned way",
+      "icon": "cup",
+      "items": [
+        {
+          "id": "shake",
+          "name": "Classic Milkshake",
+          "description": "Chocolate, Vanilla, or Strawberry",
+          "price": 6.99,
+          "popular": true
+        },
+        {
+          "id": "malt",
+          "name": "Malted Milkshake",
+          "description": "Any flavor with real malt powder",
+          "price": 7.99
+        },
+        {
+          "id": "float",
+          "name": "Root Beer Float",
+          "description": "Frosty root beer with vanilla ice cream",
+          "price": 5.99
+        }
+      ]
+    },
+    {
+      "id": "drinks",
+      "name": "Beverages",
+      "icon": "coffee",
+      "items": [
+        {
+          "id": "coffee",
+          "name": "Fresh Brewed Coffee",
+          "description": "Bottomless cup",
+          "price": 2.99
+        },
+        {
+          "id": "tea",
+          "name": "Hot Tea",
+          "price": 2.49
+        },
+        {
+          "id": "soda",
+          "name": "Fountain Soda",
+          "description": "Coke, Diet Coke, Sprite, Ginger Ale",
+          "price": 2.99
+        },
+        {
+          "id": "juice",
+          "name": "Fresh Squeezed OJ",
+          "price": 3.99
+        }
+      ]
+    }
+  ],
+  "specials": {
+    "daily": [
+      {
+        "day": "Monday",
+        "name": "Meatloaf Monday",
+        "description": "Homestyle meatloaf dinner with all the fixings",
+        "price": 11.99
+      },
+      {
+        "day": "Tuesday",
+        "name": "Taco Tuesday",
+        "description": "Three tacos with rice and beans",
+        "price": 10.99
+      },
+      {
+        "day": "Wednesday",
+        "name": "Wing Wednesday",
+        "description": "1 lb of wings with your choice of sauce",
+        "price": 12.99
+      },
+      {
+        "day": "Thursday",
+        "name": "Throwback Thursday",
+        "description": "Classic burger and shake combo",
+        "price": 14.99
+      },
+      {
+        "day": "Friday",
+        "name": "Fish Fry Friday",
+        "description": "Beer-battered fish & chips",
+        "price": 13.99
+      }
+    ]
+  },
+  "notices": [
+    "Consuming raw or undercooked meats may increase your risk of foodborne illness",
+    "Please inform your server of any allergies"
+  ]
+}

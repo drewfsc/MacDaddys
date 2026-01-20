@@ -1,0 +1,412 @@
+{
+  "categories": [
+    {
+      "name": "Classic Breakfast Combos",
+      "description": "Big plates to start your day right",
+      "icon": "sunrise",
+      "items": [
+        {
+          "name": "Route 28",
+          "description": "Two fresh eggs, choice of bacon, sausage, or ham, crisp home fries, toast, and a stack of fluffy buttermilk pancakes",
+          "price": 15.00,
+          "popular": true,
+          "featured": true,
+          "available": true
+        },
+        {
+          "name": "Route 6",
+          "description": "Two fresh eggs any style with your choice of bacon, sausage, or ham. Served with home fries and toast",
+          "price": 13.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Pit Stop",
+          "description": "A sampler of two buttermilk pancakes, two slices of French toast, and two mini waffles. Topped with whipped cream and powdered sugar",
+          "price": 15.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Speed Bumps",
+          "description": "Two pork sausage links tucked beneath two fluffy buttermilk pancakes",
+          "price": 9.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Breakfast Sandwich",
+          "description": "Egg over medium, cheddar cheese, avocado mash, and choice of bacon, sausage, or ham on a toasted brioche bun",
+          "price": 12.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Steak & Eggs",
+          "description": "Grilled steak with two eggs any style, crisp home fries, and toast",
+          "price": 24.00,
+          "popular": true,
+          "featured": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "Chef's Omelettes",
+      "description": "Fluffy three-egg omelettes served with home fries and toast",
+      "icon": "egg",
+      "items": [
+        {
+          "name": "Western Omelette",
+          "description": "Ham, onion, bell pepper, and cheddar",
+          "price": 14.00,
+          "popular": true,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Veggie Omelette",
+          "description": "Onion, bell pepper, mushroom, spinach, tomato, and cheddar",
+          "price": 14.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Three Cheese Omelette",
+          "description": "Cheddar, American, and Swiss",
+          "price": 12.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "Pancakes & Waffles",
+      "description": "House-made and served golden brown",
+      "icon": "pancakes",
+      "items": [
+        {
+          "name": "Classic Pancakes",
+          "description": "Three-stack of light and fluffy buttermilk pancakes",
+          "price": 10.00,
+          "popular": true,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Waffle",
+          "description": "Light and crispy house waffle with butter and syrup or fresh strawberries and whipped cream",
+          "price": 13.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Choco Chip Pancakes",
+          "description": "Three-stack with rich chocolate chips melted into every bite",
+          "price": 13.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "French Toast",
+          "description": "Three golden slices dusted with powdered sugar and topped with whipped cream",
+          "price": 13.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "Benedicts",
+      "description": "Poached eggs on a grilled English muffin with Hollandaise. Served with home fries",
+      "icon": "egg",
+      "items": [
+        {
+          "name": "Classic Eggs Benedict",
+          "description": "Two poached eggs with Canadian ham and creamy Hollandaise",
+          "price": 14.00,
+          "popular": true,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Irish Benedict",
+          "description": "Two poached eggs with corned beef and creamy Hollandaise",
+          "price": 15.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Florentine Benedict",
+          "description": "Two poached eggs with sautéed spinach and creamy Hollandaise",
+          "price": 13.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Smoked Salmon Benedict",
+          "description": "Two poached eggs with cold-smoked salmon and creamy Hollandaise",
+          "price": 16.00,
+          "popular": false,
+          "featured": true,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "Lunch Time",
+      "description": "Burgers and sandwiches served with chips and a pickle",
+      "icon": "burger",
+      "items": [
+        {
+          "name": "Mac Daddy's Burger",
+          "description": "8oz seasoned beef patty on brioche with bacon, cheddar, lettuce, and tomato",
+          "price": 17.00,
+          "popular": true,
+          "featured": true,
+          "available": true
+        },
+        {
+          "name": "Smoked Salmon Sandwich",
+          "description": "Cold-smoked salmon, tartar sauce, and cream cheese on marbled rye with lettuce and tomato",
+          "price": 16.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "BLT",
+          "description": "Crisp bacon, iceberg lettuce, and tomato with house-made aioli on Texas Toast",
+          "price": 14.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Grill Daddy",
+          "description": "American and sharp cheddar melted to perfection on golden-brown Texas Toast",
+          "price": 12.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Classic Patty Melt",
+          "description": "8oz beef patty with grilled onions, Swiss cheese, and mayo on marbled rye",
+          "price": 17.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "Young at Heart",
+      "description": "Kids menu - 12 and under",
+      "icon": "smile",
+      "items": [
+        {
+          "name": "Eggs & Toast",
+          "description": "Two eggs any style with toast and home fries",
+          "price": 8.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Mini Pancakes",
+          "description": "Eight fluffy mini pancakes with butter and powdered sugar. Served with home fries",
+          "price": 8.00,
+          "popular": true,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Mini Waffles",
+          "description": "Three mini waffles with whipped cream. Served with home fries",
+          "price": 8.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "Sides",
+      "description": "A little something extra",
+      "icon": "plus",
+      "items": [
+        {
+          "name": "Bacon",
+          "description": "Crispy bacon strips",
+          "price": 5.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Sausage",
+          "description": "Savory pork sausage links",
+          "price": 4.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Ham",
+          "description": "Sliced ham",
+          "price": 4.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Home Fries",
+          "description": "Crisp seasoned home fries",
+          "price": 4.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Extra Egg",
+          "description": "One egg any style",
+          "price": 2.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Toast",
+          "description": "Two slices",
+          "price": 2.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "English Muffin",
+          "description": "Grilled English muffin",
+          "price": 2.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Corned Beef Hash",
+          "description": "House-made corned beef hash",
+          "price": 8.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Hollandaise",
+          "description": "Side of creamy Hollandaise sauce",
+          "price": 3.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        }
+      ]
+    },
+    {
+      "name": "All Day Beverages",
+      "description": "Hot and cold drinks",
+      "icon": "coffee",
+      "items": [
+        {
+          "name": "Brewed Coffee",
+          "description": "Fresh brewed coffee",
+          "price": 2.00,
+          "popular": true,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Tea",
+          "description": "Hot tea",
+          "price": 2.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Hot Chocolate",
+          "description": "Rich hot chocolate",
+          "price": 3.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Juice (Small)",
+          "description": "Fresh juice",
+          "price": 3.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Juice (Large)",
+          "description": "Fresh juice",
+          "price": 4.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Milk (Small)",
+          "description": "Cold milk",
+          "price": 3.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Milk (Large)",
+          "description": "Cold milk",
+          "price": 4.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Chocolate Milk (Small)",
+          "description": "Cold chocolate milk",
+          "price": 4.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Chocolate Milk (Large)",
+          "description": "Cold chocolate milk",
+          "price": 5.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        },
+        {
+          "name": "Canned Soda",
+          "description": "Assorted canned sodas",
+          "price": 2.00,
+          "popular": false,
+          "featured": false,
+          "available": true
+        }
+      ]
+    }
+  ]
+}
