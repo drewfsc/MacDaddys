@@ -64,9 +64,11 @@ function DailySpecialsCarousel({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [todayIndex, setTodayIndex] = useState(-1);
 
   useEffect(() => {
     const todayIdx = getTodayIndex(specials);
+    setTodayIndex(todayIdx);
     setActiveIndex(todayIdx);
     if (scrollRef.current) {
       const cardWidth = scrollRef.current.offsetWidth;
@@ -93,8 +95,6 @@ function DailySpecialsCarousel({
     }
   };
 
-  const todayIndex = getTodayIndex(specials);
-
   return (
     <div className="md:hidden">
       <div
@@ -105,10 +105,10 @@ function DailySpecialsCarousel({
       >
         {specials.map((special, index) => (
           <div key={special.day} className="flex-shrink-0 w-full snap-center px-4">
-            <div className={`text-center py-4 ${index === todayIndex ? 'ring-2 ring-[#C41E3A] rounded-lg bg-[#2a2a2a]' : ''}`}>
+            <div className={`text-center py-4 ${todayIndex >= 0 && index === todayIndex ? 'ring-2 ring-[#C41E3A] rounded-lg bg-[#2a2a2a]' : ''}`}>
               <p className="font-headline text-[#C41E3A] tracking-wider text-lg">
                 {special.day}
-                {index === todayIndex && (
+                {todayIndex >= 0 && index === todayIndex && (
                   <span className="ml-2 text-xs bg-[#C41E3A] text-white px-2 py-0.5 rounded-full">TODAY</span>
                 )}
               </p>
@@ -125,7 +125,7 @@ function DailySpecialsCarousel({
             key={index}
             onClick={() => scrollToIndex(index)}
             className={`w-2 h-2 rounded-full transition-all ${
-              index === activeIndex ? 'bg-[#C41E3A] w-4' : index === todayIndex ? 'bg-[#C41E3A]/50' : 'bg-gray-500'
+              index === activeIndex ? 'bg-[#C41E3A] w-4' : (todayIndex >= 0 && index === todayIndex) ? 'bg-[#C41E3A]/50' : 'bg-gray-500'
             }`}
             aria-label={`Go to ${specials[index].day}`}
           />

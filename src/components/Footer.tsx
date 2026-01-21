@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import siteContent from '@/data/siteContent.json';
@@ -7,7 +8,11 @@ import { FadeIn, Stagger, StaggerItem, motion } from './animations';
 
 export default function Footer() {
   const { business, social } = siteContent;
-  const currentYear = new Date().getFullYear();
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
 
   const navLinks = [
     { href: '#home', label: 'HOME' },
@@ -118,7 +123,7 @@ export default function Footer() {
             className="mt-8 pt-8 border-t border-white/10 text-center origin-center"
           >
             <p className="text-gray-500 text-sm">
-              &copy; {currentYear} {business.name}. All rights reserved.
+              &copy; {currentYear ?? ''} {business.name}. All rights reserved.
             </p>
             <p className="text-gray-600 text-xs mt-2">
               {business.address.street}, {business.address.city}, {business.address.state} {business.address.zip}

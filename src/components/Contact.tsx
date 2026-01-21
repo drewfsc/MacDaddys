@@ -1,11 +1,17 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import siteContent from '@/data/siteContent.json';
 import FeedbackForm from './FeedbackForm';
 import { FadeIn, SlideIn, Stagger, StaggerItem, motion } from './animations';
 
 export default function Contact() {
   const { business, hours } = siteContent;
+  const [currentDay, setCurrentDay] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentDay(new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase());
+  }, []);
 
   const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -103,7 +109,7 @@ export default function Contact() {
               <Stagger className="space-y-2" fast>
                 {daysOfWeek.map((day) => {
                   const dayHours = hours[day as keyof typeof hours];
-                  const isToday = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() === day;
+                  const isToday = currentDay === day;
 
                   return (
                     <StaggerItem key={day}>
