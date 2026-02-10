@@ -1,11 +1,12 @@
 import NextAuth from "next-auth";
-import Resend from "next-auth/providers/resend";
+import type { EmailConfig } from "next-auth/providers";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import { MongoClient } from "mongodb";
-import { resend, EMAIL_FROM } from "./resend";
+import { sesClient, EMAIL_FROM } from "./ses";
 import { MagicLinkEmail } from "./email/templates/magic-link";
 import { render } from "@react-email/components";
 import { v4 as uuidv4 } from "uuid";
+import { SendEmailCommand } from "@aws-sdk/client-ses";
 
 const uri = process.env.MONGODB_URI!;
 let client: MongoClient;
@@ -35,31 +36,49 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     databaseName: process.env.MONGODB_DB,
   }),
   providers: [
-    Resend({
+    {
+      id: "email",
+      type: "email",
+      name: "Email",
       from: EMAIL_FROM,
-      async sendVerificationRequest({ identifier: email, url, provider }) {
+      maxAge: 15 * 60, // 15 minutes
+      async sendVerificationRequest({ identifier: email, url }) {
         const { host } = new URL(url);
 
         try {
-          if (!resend) {
-            throw new Error("RESEND_API_KEY environment variable is not set");
+          if (!sesClient) {
+            throw new Error("AWS SES credentials are not configured");
           }
 
           // Render the React email template to HTML
           const html = await render(MagicLinkEmail({ url, host }));
 
-          await resend.emails.send({
-            from: provider.from || EMAIL_FROM,
-            to: email,
-            subject: "Sign in to Mac Daddy's Diner",
-            html,
+          const command = new SendEmailCommand({
+            Source: EMAIL_FROM,
+            Destination: {
+              ToAddresses: [email],
+            },
+            Message: {
+              Subject: {
+                Data: "Sign in to Mac Daddy's Diner",
+                Charset: "UTF-8",
+              },
+              Body: {
+                Html: {
+                  Data: html,
+                  Charset: "UTF-8",
+                },
+              },
+            },
           });
+
+          await sesClient.send(command);
         } catch (error) {
           console.error("Error sending magic link email:", error);
           throw new Error("Failed to send verification email");
         }
       },
-    }),
+    } satisfies EmailConfig,
   ],
   session: {
     strategy: "jwt",
