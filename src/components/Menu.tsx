@@ -482,45 +482,7 @@ export default function Menu() {
             )}
           </FadeIn>
 
-          {/* Daily Specials Banner */}
-          {specials.length > 0 && (
-            <FadeIn delay={0.1}>
-              <div className="bg-[#1a1a1a] text-white rounded-lg p-6 mb-12 retro-border">
-                <h3 className="font-headline text-2xl text-[#C41E3A] tracking-wider mb-4 text-center">DAILY SPECIALS</h3>
-                {/* Desktop Grid */}
-                <Stagger className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {specials.map((special) => (
-                    <StaggerItem key={special.day} className="text-center">
-                      <p className="font-headline text-[#C41E3A] tracking-wider">{special.day}</p>
-                      <p className="font-accent font-bold">{special.name}</p>
-                      <p className="text-sm text-gray-400">{special.description}</p>
-                      <p className="font-headline text-lg mt-1">{formatPrice(special.price)}</p>
-                    </StaggerItem>
-                  ))}
-                </Stagger>
-                {/* Mobile Swipeable Carousel */}
-                <DailySpecialsCarousel specials={specials} formatPrice={formatPrice} />
-              </div>
-            </FadeIn>
-          )}
-
-          {/* Quick Navigation */}
-          <FadeIn delay={0.2}>
-            <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8 sticky top-16 md:top-20 z-40 bg-[#FFF8E7]/95 backdrop-blur-sm py-3 -mx-4 px-4 md:mx-0 md:px-0 md:bg-transparent md:backdrop-blur-none md:static">
-              {categories.map((category) => (
-                <motion.a
-                  key={category.id}
-                  href={`#category-${category.id}`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="font-headline text-sm md:text-base tracking-wider px-3 py-1.5 md:px-4 md:py-2 rounded bg-white text-[#1a1a1a] hover:bg-[#C41E3A] hover:text-white border border-[#1a1a1a] hover:border-[#C41E3A] transition-all shadow-sm"
-                >
-                  {category.name.toUpperCase()}
-                </motion.a>
-              ))}
-            </div>
-          </FadeIn>
-
+          
           {/* All Categories */}
           {categories.map((category) => (
             <div

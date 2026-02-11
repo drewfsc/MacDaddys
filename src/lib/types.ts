@@ -29,6 +29,7 @@ export interface DailySpecial {
   name: string;
   description: string;
   price: number;
+  active?: boolean;
 }
 
 export interface SpecialsData {
@@ -47,6 +48,7 @@ export interface MenuData {
 }
 
 // Feedback Types
+// Note: Date fields are stored as ISO strings in blob storage (JSON.stringify converts Date to string)
 export interface Feedback {
   _id?: ObjectId;
   name: string;
@@ -56,11 +58,11 @@ export interface Feedback {
   message: string;
   rating?: number;
   visitDate?: string;
-  createdAt: Date;
+  createdAt: Date | string;
   read: boolean;
   replied: boolean;
   replyMessage?: string;
-  repliedAt?: Date;
+  repliedAt?: Date | string;
   archived: boolean;
 }
 

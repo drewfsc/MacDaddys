@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       message: body.message,
       rating: body.rating || undefined,
       visitDate: body.visitDate || undefined,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
       read: false,
       replied: false,
       archived: false,
@@ -132,7 +132,7 @@ export async function PUT(request: Request) {
     // Handle reply
     if (updates.replyMessage) {
       updates.replied = true;
-      updates.repliedAt = new Date();
+      updates.repliedAt = new Date().toISOString();
     }
 
     feedbackData.items[itemIndex] = {
